@@ -1,0 +1,33 @@
+name: Make Call
+
+on:
+  workflow_dispatch:
+    inputs:
+      phone_number:
+        description: 'Phone number to call (with country code)'
+        required: true
+        default: '+919911708120'
+      call_type:
+        description: 'Type of call (market, portfolio, tech, etc.)'
+        required: true
+        default: 'market'
+
+jobs:
+  make-call:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make API Call
+        env:
+          BLAND_AI_KEY: ${{ secrets.BLAND_AI_KEY }}
+        run: |
+          curl -X POST https://api.bland.ai/v1/calls \
+            -H "Authorization: $BLAND_AI_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "phone_number": "${{ github.event.inputs.phone_number }}",
+              "task": "Hi! This is Oscar, your financial assistant. I have your ${{ github.event.inputs.call_type }} update ready.",
+              "model": "enhanced",
+              "wait_for_greeting": true,
+              "record": false,
+              "interruptions_enabled": true
+            }'
