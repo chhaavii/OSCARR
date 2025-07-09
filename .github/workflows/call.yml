@@ -1,4 +1,4 @@
-name: Make Call
+name: Oscar AI Financial Call
 
 on:
   workflow_dispatch:
@@ -8,26 +8,52 @@ on:
         required: true
         default: '+919911708120'
       call_type:
-        description: 'Type of call (market, portfolio, tech, etc.)'
+        description: 'Type of financial advice (market, portfolio, tech, etc.)'
         required: true
         default: 'market'
 
 jobs:
-  make-call:
+  financial-call:
     runs-on: ubuntu-latest
     steps:
-      - name: Make API Call
+      - name: Make Financial Advisory Call
         env:
           BLAND_AI_KEY: ${{ secrets.BLAND_AI_KEY }}
         run: |
+          # Map call types to personalized advice prompts
+          case "${{ github.event.inputs.call_type }}" in
+            market)
+              advice_type="personalized market analysis and investment opportunities"
+              ;;
+            portfolio)
+              advice_type="portfolio review and optimization suggestions"
+              ;;
+            tech)
+              advice_type="technology sector insights and stock recommendations"
+              ;;
+            retirement)
+              advice_type="retirement planning strategy"
+              ;;
+            investment)
+              advice_type="investment strategy recommendations"
+              ;;
+            *)
+              advice_type="personalized financial advice"
+              ;;
+          esac
+
           curl -X POST https://api.bland.ai/v1/calls \
             -H "Authorization: $BLAND_AI_KEY" \
             -H "Content-Type: application/json" \
             -d '{
               "phone_number": "${{ github.event.inputs.phone_number }}",
-              "task": "Hi! This is Oscar, your financial assistant. I have your ${{ github.event.inputs.call_type }} update ready.",
+              "task": "Hello, this is Oscar, your personal financial advisor. I have your '$advice_type' ready. [Pause] Based on your financial profile and current market conditions, here are my insights:",
               "model": "enhanced",
-              "wait_for_greeting": true,
+              "wait_for_greeting": false,
               "record": false,
-              "interruptions_enabled": true
+              "interruptions_enabled": false,
+              "voice_settings": {
+                "speed": 1.1,
+                "stability": 0.8
+              }
             }'
