@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscar AI - Simple Call</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        .btn {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .input-field {
+            width: 100%;
+            background: rgba(31, 41, 55, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+        }
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+        .status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .status.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .loading {
+            display: none;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <div class="glass-card">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-robot text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">Oscar AI</h1>
+            <p class="text-gray-300">Simple Call Interface</p>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Phone Number (with country code)</label>
+            <input type="tel" 
+                   id="phone" 
+                   class="input-field"
+                   placeholder="+919911708120"
+                   value="+91">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Call Type</label>
+            <select id="callType" class="input-field">
+                <option value="market">Market Update</option>
+                <option value="portfolio">Portfolio Review</option>
+                <option value="tech">Tech Stocks</option>
+                <option value="dividend">Dividend Stocks</option>
+                <option value="general">General Advice</option>
+            </select>
+        </div>
+
+        <button id="callButton" class="btn w-full py-3">
+            <i class="fas fa-phone-alt mr-2"></i> Call Me Now
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+        </button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const callButton = document.getElementById('callButton');
+            const phoneInput = document.getElementById('phone');
+            const callTypeSelect = document.getElementById('callType');
+            const statusDiv = document.getElementById('status');
+            const loadingDiv = document.getElementById('loading');
+
+            // Format phone number as user types
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.startsWith('91') && !value.startsWith('+')) {
+                    value = '+' + value;
+                }
+                e.target.value = value;
+            });
+
+            // Handle call button click
+            callButton.addEventListener('click', async function() {
+                const phoneNumber = phoneInput.value.trim();
+                const callType = callTypeSelect.value;
+                
+                // Validate phone number
+                if (!phoneNumber) {
+                    showStatus('Please enter a phone number', 'error');
+                    return;
+                }
+
+                // Disable button and show loading
+                callButton.disabled = true;
+                loadingDiv.style.display = 'inline-block';
+                callButton.querySelector('i').className = 'fas fa-phone-alt mr-2';
+                
+                // Clear previous status
+                statusDiv.style.display = 'none';
+                statusDiv.className = 'status';
+
+                try {
+                    // Make the API call directly to Bland AI
+                    const response = await makeCall(phoneNumber, callType);
+                    
+                    if (response && response.status === 'success') {
+                        showStatus('Call initiated successfully! You should receive a call shortly.', 'success');
+                        console.log('Call details:', response);
+                    } else {
+                        throw new Error(response?.message || 'Failed to initiate call');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus(`Error: ${error.message || 'Failed to initiate call. Please try again.'}`, 'error');
+                } finally {
+                    // Re-enable button after delay
+                    setTimeout(() => {
+                        callButton.disabled = false;
+                        loadingDiv.style.display = 'none';
+                    }, 3000);
+                }
+            });
+
+            // Function to make the API call to Bland AI
+            async function makeCall(phoneNumber, callType) {
+                // Map call types to appropriate messages
+                const callMessages = {
+                    'market': 'market update',
+                    'portfolio': 'portfolio review',
+                    'tech': 'tech stocks analysis',
+                    'dividend': 'dividend stocks update',
+                    'general': 'general financial advice'
+                };
+
+                const message = `Hi! I'm Oscar, your personal financial assistant. I'm calling with your ${callMessages[callType] || 'financial update'}.`;
+                
+                const response = await fetch('https://api.bland.ai/v1/calls', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'org_ee71a3cd56523705d2249786d60877331c7f9d2240da2ecff8201541621b3f3b072df74ba4c84efbeab169'
+                    },
+                    body: JSON.stringify({
+                        phone_number: phoneNumber,
+                        task: message,
+                        model: 'enhanced',
+                        wait_for_greeting: true,
+                        record: false,
+                        interruptions_enabled: true,
+                        enhanced_voice_detection: true
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'API request failed');
+                }
+
+                return response.json();
+            }
+
+            // Function to show status messages
+            function showStatus(message, type = 'info') {
+                statusDiv.textContent = message;
+                statusDiv.className = `status ${type}`;
+                statusDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
