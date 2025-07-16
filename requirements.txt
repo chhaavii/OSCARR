@@ -1,0 +1,11 @@
+python-dotenv
+web3
+requests
+google-generativeai
+pandas
+numpy
+python-binance
+ccxt
+flask
+apscheduler
+pytest 
