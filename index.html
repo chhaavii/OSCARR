@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscar AI - Simple Call</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        .btn {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .input-field {
+            width: 100%;
+            background: rgba(31, 41, 55, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+        }
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+        .status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .status.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .status.info {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .loading {
+            display: none;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <div class="glass-card">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-robot text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2 bg-gradient-to-r from-indigo-400 to-purple-300 text-transparent bg-clip-text">Oscar AI</h1>
+            <p class="text-gray-300">Personal Financial Advisory Service</p>
+        </div>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Phone Number (with country code)</label>
+            <input type="tel" 
+                   id="phone" 
+                   class="input-field"
+                   placeholder="+919911708120"
+                   value="+91">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Call Type</label>
+            <select id="callType" class="input-field">
+                <option value="market">Market Analysis</option>
+                <option value="portfolio">Portfolio Review</option>
+                <option value="tech">Tech Sector Update</option>
+                <option value="retirement">Retirement Planning</option>
+                <option value="investment">Investment Strategy</option>
+            </select>
+        </div>
+
+        <button id="callButton" class="btn w-full py-3">
+            <i class="fas fa-phone-alt mr-2"></i> Request Callback
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+        </button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const callButton = document.getElementById('callButton');
+            const phoneInput = document.getElementById('phone');
+            const callTypeSelect = document.getElementById('callType');
+            const statusDiv = document.getElementById('status');
+            const loadingDiv = document.getElementById('loading');
+
+            // Format phone number as user types
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.startsWith('91') && !value.startsWith('+')) {
+                    value = '+' + value;
+                }
+                e.target.value = value;
+            });
+
+            // Button click handler
+            callButton.addEventListener('click', function() {
+                const phoneNumber = phoneInput.value.trim();
+                const callType = callTypeSelect.value;
+                
+                // Clear previous status
+                statusDiv.innerHTML = '';
+                
+                // Basic phone number validation
+                if (!phoneNumber) {
+                    showStatus('Please enter a phone number with country code (e.g., +919911708120)', 'error');
+                    return;
+                }
+                
+                // Validate phone number format (basic international format)
+                const phoneRegex = /^\+[1-9]\d{1,14}$/;
+                if (!phoneRegex.test(phoneNumber)) {
+                    showStatus('Please enter a valid phone number with country code (e.g., +919911708120)', 'error');
+                    return;
+                }
+                
+                // Update UI for calling state
+                callButton.disabled = true;
+                callButton.classList.add('opacity-75', 'cursor-not-allowed');
+                loadingDiv.style.display = 'inline-block';
+                
+                // Simulate API call with timeout
+                setTimeout(() => {
+                    // Map call types to display names
+                    const callTypeNames = {
+                        'market': 'Market Analysis',
+                        'portfolio': 'Portfolio Review',
+                        'tech': 'Tech Sector Update',
+                        'retirement': 'Retirement Planning',
+                        'investment': 'Investment Strategy'
+                    };
+                    
+                    // Show success message
+                    showStatus(
+                        `Thank you! Your request for ${callTypeNames[callType] || 'financial advice'} has been received. ` +
+                        `A financial advisor will contact you at ${phoneNumber} shortly.`,
+                        'success'
+                    );
+                    
+                    // Re-enable button
+                    callButton.disabled = false;
+                    callButton.classList.remove('opacity-75', 'cursor-not-allowed');
+                    loadingDiv.style.display = 'none';
+                    
+                    // Clear form after 5 seconds
+                    setTimeout(() => {
+                        phoneInput.value = '+91';
+                        callTypeSelect.value = 'market';
+                        statusDiv.style.display = 'none';
+                    }, 5000);
+                    
+                }, 1500); // Simulate network delay
+            });
+
+            // Function to show status messages
+            function showStatus(message, type = 'info') {
+                statusDiv.textContent = message;
+                statusDiv.className = `status ${type}`;
+                statusDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
