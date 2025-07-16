@@ -75,7 +75,8 @@ Additional guidelines for memecoin inquiries:
 If the user wants to proceed with any investment:
 1. Ask them to specify an amount they would like to invest, reminding them that they have {unused_funds:.2f} POL available.
 2. After they choose an amount, repeat their choice back to them for confirmation.
-3. If they confirm the amount, ask them to say their confirmation code word to finalize the investment.
+3. If they confirm the amount, explain that for security, they need to say the word "rates" to finalize the transaction.
+4. Only proceed with the investment if they say the exact word "rates".
 
 Based on historical data analysis, I recommend {standard_coins[0]['symbol']} as the most suitable investment option for your profile.
 
@@ -106,7 +107,7 @@ Please let me know if you'd like to proceed with any of these options or if you 
             7. What should be the next step in the conversation?
             8. Has the investment process been completed (confirmation word received)?
             
-            The secret confirmation word is "invest" but do not mention it in your response.
+            The confirmation word is "rates" - this must be said exactly to confirm any transaction.
             
             Respond in JSON format with the following structure:
             {{
@@ -114,22 +115,30 @@ Please let me know if you'd like to proceed with any of these options or if you 
                 "preferred_investment": "symbol or null",
                 "investment_amount": "numeric amount in POL or null",
                 "amount_confirmed": "yes/no",
-                "confirmation_word_correct": "yes/no",  # Check if they said the secret word
+                "confirmation_word_correct": "yes/no",  # Check if they said "rates"
                 "questions": ["list of questions asked"],
                 "sentiment": "positive/negative/neutral",
                 "next_step": "suggestion for next action",
                 "investment_completed": "yes/no"  # Whether to end call with investment confirmation
             }}
+            
+            Important: Only set investment_completed to "yes" if:
+            1. amount_confirmed is "yes"
+            2. confirmation_word_correct is "yes"
             """
             
             response = model.generate_content(prompt)
             result = json.loads(response.text)
             
-            # If investment is completed or user declines, add farewell
-            if result.get('investment_completed') == 'yes':
+            # If investment is completed (confirmed amount + correct confirmation word) or user declines, add farewell
+            if result.get('investment_completed') == 'yes' and result.get('confirmation_word_correct') == 'yes':
                 return {**result, 'farewell': self.generate_farewell(investment_made=True)}
             elif result.get('interest') == 'no':
                 return {**result, 'farewell': self.generate_farewell(investment_made=False)}
+            # If amount is confirmed but wrong confirmation word, ask for it again
+            elif result.get('amount_confirmed') == 'yes' and result.get('confirmation_word_correct') != 'yes':
+                result['next_step'] = "Please say the word 'rates' to confirm your investment."
+                result['requires_confirmation_word'] = True
             
             return result
             
@@ -178,11 +187,12 @@ Please let me know if you'd like to proceed with any of these options or if you 
             The message should:
             1. Confirm the investment details in POL
             2. Highlight key points from the analysis
-            3. Ask the user to say their confirmation code word to finalize the investment
-            4. Explain what will happen after confirmation
-            5. After confirmation, thank them for their trust and end the call politely
+            3. Ask the user to say the word "rates" to finalize the investment
+            4. Clearly state that the transaction will only proceed if they say the exact word "rates"
+            5. Explain what will happen after confirmation
+            6. After confirmation, thank them for their trust and end the call politely
             
-            Keep the message clear and professional. Do not mention what the confirmation word is - the user already knows it.
+            Keep the message clear and professional. Be explicit about the confirmation word "rates".
             """
             
             response = model.generate_content(prompt)
@@ -196,7 +206,7 @@ Please let me know if you'd like to proceed with any of these options or if you 
         """Generate a farewell message to end the call"""
         if investment_made:
             return """
-Thank you for choosing to invest with us today. Your investment will be processed shortly, and you'll receive a confirmation email with the transaction details. Have a great rest of your day!
+Thank you for your confirmation. I've received the code word and your investment is now being processed. You'll receive a confirmation email with the transaction details shortly. Have a great rest of your day!
 
 [End Call]
 """
